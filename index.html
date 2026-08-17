@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Checker — Parejao (XAMPP)</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f8f9fa;
+    --card:#ffffff;
+    --fg:#1a1a1a;
+    --muted:#5a5a6a;
+    --accent:#00ffaa;
+    --danger:#ff3b5c;
+    --radius:12px;
+    --font:'SF Pro','Segoe UI',system-ui,-apple-system,sans-serif
+  }
+  html,body{height:100%}
+  body{
+    font-family:var(--font);background:var(--bg);color:var(--fg);
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    display:flex;flex-direction:column;min-height:100vh;padding:12px;gap:12px
+  }
+  .container{max-width:520px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:10px}
+  h1{font-size:1.1rem;font-weight:600;letter-spacing:-.02em;text-align:center;padding:4px 0;color:var(--accent)}
+  .section{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid rgba(0,0,0,.06)}
+  label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+  textarea{
+    width:100%;background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.08);
+    border-radius:10px;padding:12px;font-size:.85rem;color:var(--fg);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    resize:vertical;outline:none;transition:border-color .2s
+  }
+  textarea:focus{border-color:var(--accent)}
+  textarea{min-height:160px;max-height:320px}
+  .btn-group{display:flex;gap:8px}
+  button{
+    flex:1;padding:12px 16px;border-radius:10px;font-size:.9rem;font-weight:600;
+    cursor:pointer;border:none;transition:all .2s;text-transform:uppercase;letter-spacing:.04em
+  }
+  .btn-primary{background:var(--accent);color:#000}
+  .btn-primary:active{transform:scale(.97)}
+  .btn-stop{background:var(--danger);color:#fff}
+  .btn-stop:active{transform:scale(.97)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+  .results{max-height:280px;overflow-y:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;line-height:1.6;padding:8px;border-radius:8px;background:rgba(0,0,0,.06)}
+  .result-item{padding:6px 8px;border-radius:6px;margin-bottom:4px;border-left:3px solid var(--muted)}
+  .result-item.live{border-left-color:var(--accent);background:rgba(0,255,170,.08)}
+  .live-badge{cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+  .status{font-size:.75rem;color:var(--muted);text-align:center;padding:4px}
+  .footer{margin-top:auto;padding:14px;text-align:center;font-size:.7rem;color:var(--muted)}
+  .footer .team{color:var(--accent);font-weight:700;font-size:.8rem}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:var(--muted);border-radius:4px}
+  @media(max-width:380px){.btn{padding:10px 12px;font-size:.8rem}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CHECKER — PAREJAO</h1>
+
+  <div class="section">
+    <label>Cartões (1 por linha — até 20)</label>
+    <textarea id="cardsInput" placeholder="Formato: numero|mes|ano|cvv
+Exemplo:
+4242424242424242|12|2025|123"></textarea>
+  </div>
+
+  <div class="section">
+   <div class="section">
+     <label>Checker GG (CC test — até 20)</label>
+     <textarea id="ggTest" placeholder="Formato: numero|mes|ano|cvv
+Exemplo:
+4242424242424242|12|2025|123"></textarea>
+   </div>
+
+  <div class="btn-group">
+    <button class="btn btn-primary" id="btnStart" onclick="startCheck()">Iniciar</button>
+    <button class="btn btn-stop" id="btnStop" onclick="stopCheck()" disabled>Parar</button>
+  </div>
+
+  <div class="status" id="status">Pronto — insira até 20 cards</div>
+
+  <div class="section">
+    <label>Resultados</label>
+    <div class="results" id="results">Nenhum resultado ainda.</div>
+  </div>
+
+  <div class="footer">
+    <span class="team">CyberHaxor Team</span>
+  </div>
+</div>
+
+ <script>
+const API_URL = 'checker.php?action=check';
+const STRIPE_PK = 'pk_live_51trmholjuafa1w8i3yq5rb0k46lz4vmodcjrqrb1oy9z9pwa5jba8oqbzdetu5sjuma6zqizr57kg7wx24msccnn00yhqpn4st';
+let isRunning = false;
+let processedCount = 0;
+
+function parseCards(text) {
+  return text.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .slice(0, 20);
+}
+
+function addResult(text, isLive = false) {
+  const box = document.getElementById('results');
+  const div = document.createElement('div');
+  div.className = 'result-item' + (isLive ? ' live' : '');
+  if (isLive) {
+    div.innerHTML = text.replace(/parejao/gi, '<a class="live-badge" href="https://t.me/parejao" target="_blank" rel="noopener">parejao</a>');
+  } else {
+    div.textContent = text;
+  }
+  if (box.firstChild && box.firstChild.textContent === 'Nenhum resultado ainda.') box.innerHTML = '';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function checkCard(cardLine) {
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_line: cardLine })
+    });
+    return await r.json();
+  } catch (err) {
+    return { ok: false, msg: err.message || 'Erro de rede' };
+  }
+}
+
+async function processList(cards) {
+  isRunning = true;
+  processedCount = 0;
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('status').textContent = 'Processando... 0/' + cards.length;
+
+  for (let i = 0; i < cards.length && isRunning; i++) {
+    const line = cards[i].trim();
+    if (!line) continue;
+    const res = await checkCard(line);
+    processedCount = i + 1;
+    document.getElementById('status').textContent = 'Processando... ' + processedCount + '/' + cards.length;
+    if (res.ok) {
+      addResult(line + ' ====> LIVE BY PAREJAO', true);
+    } else {
+      addResult(line + ' — ' + res.msg);
+    }
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+  }
+
+  isRunning = false;
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('status').textContent = 'Concluído — ' + processedCount + '/' + cards.length + ' processados';
+}
+
+function startCheck() {
+  if (isRunning) return;
+  const raw = document.getElementById('cardsInput').value;
+  const cards = parseCards(raw);
+  if (cards.length === 0) {
+    document.getElementById('status').textContent = 'Nenhum cartão válido';
+    return;
+  }
+  document.getElementById('results').innerHTML = '';
+  processList(cards);
+}
+
+function stopCheck() {
+  isRunning = false;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('status').textContent = 'Parado no último resultado (' + processedCount + ')';
+}
+
+document.getElementById('ggTest').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!isRunning) {
+      const raw = document.getElementById('cardsInput').value;
+      const cards = parseCards(raw);
+      if (cards.length > 0) {
+        document.getElementById('results').innerHTML = '';
+        processList(cards);
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
