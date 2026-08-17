@@ -5,23 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Checker — Parejao</title>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  *,
+*::before,
+*::after{
+    box-sizing:border-box;
+    margin:0;
+    padding:0
+  }
   :root{
-    --bg:#0b0f19;
-    --bg-card:#111827;
-    --fg:#e6eef8;
-    --muted:#6b7a8f;
-    --live:#16a34a;
-    --die:#dc2626;
+    --bg:#0d0d0d;
+    --bg-card:#1a1a1a;
+    --fg:#e8e8e8;
+    --muted:#8a8a8a;
+    --live:#0d5c0d;
+    --die:#8b0000;
     --accent:#06b6d4;
     --radius:12px;
     --font:'SF Pro','Segoe UI',system-ui,-apple-system,sans-serif
   }
   html,body{height:100%}
+  html,
   body{
-    font-family:var(--font);background:var(--bg);color:var(--fg);
-    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-    display:flex;flex-direction:column;min-height:100vh;padding:16px;gap:14px
+    height:100%;
+    background:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 50%,#1a1a1a 100%);
+  }
+  body{
+    font-family:var(--font);
+    background:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 50%,#1a1a1a 100%);
+    color:var(--fg);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    padding:16px;
+    gap:14px
+  }
   }
   .container{max-width:540px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:12px}
   .logo-skull{text-align:center;padding:6px 0 4px}
@@ -81,14 +100,11 @@
     <textarea id="cardsInput" placeholder="numero|mes|ano|cvv
 Exemplo:
 4242424242424242|12|2025|123"></textarea>
-  </div>
   
-  <div class="section">
     <label>Checker GG (até 100)</label>
     <textarea id="ggTest" placeholder="numero|mes|ano|cvv
 Exemplo:
 4242424242424242|12|2025|123"></textarea>
-  </div>
   
   <div class="btn-group">
     <button class="btn btn-primary" id="btnStart" onclick="startCheck('cc')">Iniciar CC</button>
@@ -109,8 +125,8 @@ Exemplo:
 </div>
 
 <script>
-const STRIPE_PK = 'pk_live_51TrmHoLJuAfa1w8I3yQ5RB0K46lz4VMOdCJRQRb1oy9Z9PwA5jBa8OQbZDetU5SJUMa6zqIzR57Kg7wx24msCCnn00yHqpN4St';
-const stripe = Stripe(STRIPE_PK);
+  const STRIPE_PK = 'pk_live_51TrmHoLJuAfa1w8I3yQ5RB0K46lz4VMOdCJRQRb1oy9Z9PwA5jBa8OQbZDetU5SJUMa6zqIzR57Kg7wx24msCCnn00yHqpN4St';
+  const stripe = Stripe(STRIPE_PK);
 let isRunning = false;
 let processedCount = 0;
 
@@ -122,14 +138,14 @@ function parseCards(text) {
 }
 
 function addResult(text, isLive = false) {
-  const box = document.getElementById('results');
-  const div = document.createElement('div');
-  div.className = 'result-item' + (isLive ? ' live' : ' die');
-  div.textContent = text;
-  if (box.firstChild && box.firstChild.textContent === 'Nenhum resultado ainda.') box.innerHTML = '';
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
+    const box = document.getElementById('results');
+    const div = document.createElement('div');
+    div.className = 'result-item' + (isLive ? ' live' : ' die');
+    div.textContent = isLive ? 'LIVE ====> @PAREJAO' : text;
+    if (box.firstChild && box.firstChild.textContent === 'Nenhum resultado ainda.') box.innerHTML = '';
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
 
 async function checkCard(cardLine) {
   try {
@@ -144,7 +160,7 @@ async function checkCard(cardLine) {
     };
     const { token, error } = await stripe.createToken('card', cardData);
     if (error) return { ok: false, msg: 'DIE' };
-    return { ok: true, msg: 'LIVE ====> @PAREJAO' };
+    return { ok: true, msg: 'LIVE' };
   } catch (err) {
     return { ok: false, msg: 'DIE' };
   }
